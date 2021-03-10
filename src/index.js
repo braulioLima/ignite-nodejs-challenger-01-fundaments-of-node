@@ -27,15 +27,16 @@ function checksExistsUserAccount(request, response, next) {
 
 function checksExistsTodo(request, response, next) {
   const { user } = request;
-  const { id: todoId } = request.params;
+  const { id } = request.params;
 
-  const todoToUpdate = user.todos.find(todo => todo.id === todoId);
+  const todoIndex  = user.todos.findIndex(todo => todo.id === id);
 
-  if(!todoToUpdate) {
+  if(todoIndex < 0) {
     return response.status(404).json({ error: 'Todo not found' });
   }
 
-  request.todo = todoToUpdate;
+  request.todo = user.todos[todoIndex];
+  request.todoIndex = todoIndex;
 
   return next();
 }
@@ -105,8 +106,12 @@ app.patch('/todos/:id/done', checksExistsUserAccount, checksExistsTodo,(request,
 
 });
 
-app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+app.delete('/todos/:id', checksExistsUserAccount, checksExistsTodo, (request, response) => {
+  const { user, todoIndex } = request;
+
+  user.todos.splice(todoIndex, 1);
+
+  return response.status(204).send();
 });
 
 module.exports = app;
